@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>次元觉醒 - ACGTI 人格测试</title>
+    <!-- 引入二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -23,7 +24,7 @@
             min-height: 100vh;
             margin: 0;
             background-image: radial-gradient(circle at top right, #2a0845, #0f0f1a);
-            -webkit-touch-callout: default; /* 允许长按 */
+            -webkit-touch-callout: default; /* 允许长按图片保存 */
         }
         .container {
             background: var(--card-bg);
@@ -106,7 +107,7 @@
         }
         .save-tip { color: #ff69b4; font-size: 1.1em; font-weight: bold; margin-bottom: 15px; text-align: center; }
 
-        /* 邀请弹窗样式（全新） */
+        /* 邀请弹窗样式 */
         .invite-box {
             background: #1a1a2e; padding: 25px; border-radius: 16px;
             width: 85%; max-width: 400px; text-align: center;
@@ -120,7 +121,7 @@
             color: #fff; border-radius: 8px; font-size: 0.9em;
             margin-bottom: 15px; text-align: center; user-select: all;
         }
-        .invite-qr { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0; }
+        .invite-qr { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0; min-height: 120px; min-width: 120px; }
         
         .modal-close {
             color: white; margin-top: 20px; font-size: 1em;
@@ -133,6 +134,7 @@
 <body>
 
 <div class="container" id="app">
+    <!-- 欢迎页面 -->
     <div id="start-screen">
         <h1>次元觉醒</h1>
         <p class="subtitle">ACGTI 二次元人格测试</p>
@@ -141,12 +143,14 @@
         <div id="friend-challenge" class="friend-tip hidden"></div>
     </div>
 
+    <!-- 测试页面 -->
     <div id="quiz-screen" class="hidden">
         <div class="progress-bar"><div class="progress" id="progress"></div></div>
         <div class="question-title" id="question-text"></div>
         <div id="options-container"></div>
     </div>
 
+    <!-- 结果页面 -->
     <div id="result-screen" class="hidden">
         <h1>你的二次元人格是</h1>
         <div class="result-type" id="result-code"></div>
@@ -168,7 +172,7 @@
     </div>
 </div>
 
-<!-- 邀请弹窗（全新） -->
+<!-- 邀请好友弹窗 -->
 <div id="invite-modal" class="modal hidden">
     <div class="invite-box">
         <h3>🔗 邀请好友来测测</h3>
@@ -183,17 +187,51 @@
     </div>
 </div>
 
+<!-- 隐藏的 Canvas 和 复制输入框 -->
 <canvas id="poster-canvas" width="600" height="900"></canvas>
+<input type="text" id="copy-input" style="position: absolute; left: -9999px; top: 0;">
 
 <script>
+    // 题库数据
     const questions = [
-        { q: "如果在漫展上看到喜欢的Coser，你会？", options: [ { text: "A. 直接冲上去求合影，大声喊出“贴贴！”", type: "E" }, { text: "B. 远远地躲在柱子后面偷偷看，默默拍照", type: "I" } ] },
-        { q: "看番剧时，你更看重？", options: [ { text: "A. 剧情设定严谨，世界观宏大，逻辑自洽", type: "S" }, { text: "B. 角色够不够涩/可爱，脑洞够不够大，二创多不多", type: "N" } ] },
-        { q: "打游戏连跪（排位十连败）时，你的反应是？", options: [ { text: "A. 理性分析战绩，复盘失误，研究版本答案", type: "T" }, { text: "B. 破防大骂队友，或者开始摆烂去玩娱乐模式", type: "F" } ] },
-        { q: "周末你的二次元日常更倾向于？", options: [ { text: "A. 制定好计划，补番表、游戏日常、买谷子一个不落", type: "J" }, { text: "B. 随缘，累了就躺着，打开B站首页推什么看什么", type: "P" } ] },
-        { q: "当你在网上看到有人狂踩你最爱的神作时？", options: [ { text: "A. 必须重拳出击，列出万字长文证明他的观点是错的", type: "T" }, { text: "B. 心里很难受，但懒得争论，默默关掉网页抱抱自己", type: "F" } ] }
+        {
+            q: "如果在漫展上看到喜欢的Coser，你会？",
+            options: [
+                { text: "A. 直接冲上去求合影，大声喊出“贴贴！”", type: "E" },
+                { text: "B. 远远地躲在柱子后面偷偷看，默默拍照", type: "I" }
+            ]
+        },
+        {
+            q: "看番剧时，你更看重？",
+            options: [
+                { text: "A. 剧情设定严谨，世界观宏大，逻辑自洽", type: "S" },
+                { text: "B. 角色够不够涩/可爱，脑洞够不够大，二创多不多", type: "N" }
+            ]
+        },
+        {
+            q: "打游戏连跪（排位十连败）时，你的反应是？",
+            options: [
+                { text: "A. 理性分析战绩，复盘失误，研究版本答案", type: "T" },
+                { text: "B. 破防大骂队友，或者开始摆烂去玩娱乐模式", type: "F" }
+            ]
+        },
+        {
+            q: "周末你的二次元日常更倾向于？",
+            options: [
+                { text: "A. 制定好计划，补番表、游戏日常、买谷子一个不落", type: "J" },
+                { text: "B. 随缘，累了就躺着，打开B站首页推什么看什么", type: "P" }
+            ]
+        },
+        {
+            q: "当你在网上看到有人狂踩你最爱的神作时？",
+            options: [
+                { text: "A. 必须重拳出击，列出万字长文证明他的观点是错的", type: "T" },
+                { text: "B. 心里很难受，但懒得争论，默默关掉网页抱抱自己", type: "F" }
+            ]
+        }
     ];
 
+    // 结果数据库
     const results = {
         "ENFJ": { name: "亚撒西的温柔主角", desc: "你就像王道热血番里的男主/女主，充满共情能力，总是用爱和羁绊感化反派。你的属性是：社交牛逼症、保姆型人格、小太阳。" },
         "INFP": { name: "深处迷雾中的中二法师", desc: "你的内心世界极其丰富，可能是个重度设定控或文字游戏爱好者。在外人看来有些社恐，但在自己的世界里你就是绝对的神明。属性：脑洞大开、内心戏超多、设定狂魔。" },
@@ -219,6 +257,7 @@
     let currentResultData = null;
     let inviteUrlGlobal = "";
 
+    // 页面加载时检查是否有好友邀请参数
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const friendCode = urlParams.get('invite');
@@ -238,8 +277,10 @@
     function loadQuestion() {
         document.getElementById('progress').style.width = `${(currentQuestion / questions.length) * 100}%`;
         document.getElementById('question-text').innerText = `Q${currentQuestion + 1}. ${questions[currentQuestion].q}`;
+        
         const optionsContainer = document.getElementById('options-container');
         optionsContainer.innerHTML = '';
+        
         questions[currentQuestion].options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
@@ -264,6 +305,7 @@
         code += (scores.N >= scores.S) ? "N" : "S"; 
         code += (scores.F >= scores.T) ? "F" : "T"; 
         code += (scores.P >= scores.J) ? "P" : "J";
+        
         currentResultData = results[code] || results["DEFAULT"];
 
         document.getElementById('result-code').innerText = code;
@@ -275,6 +317,7 @@
         inviteUrlGlobal = `${baseUrl}?invite=${code}`;
     }
 
+    // 重新测试
     function resetTest() {
         scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
         currentQuestion = 0;
@@ -282,19 +325,21 @@
         document.getElementById('progress').style.width = '0%';
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('start-screen').classList.remove('hidden');
+        
+        // 清除URL上的邀请参数，避免刷新干扰
         if (window.history.pushState) {
             const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.pushState({path:newurl},'',newurl);
         }
     }
 
-    // ================= 全新：打开邀请弹窗 =================
+    // 打开邀请弹窗
     function openInviteModal() {
         document.getElementById('invite-link-text').value = inviteUrlGlobal;
         
         // 生成二维码
         const qrContainer = document.getElementById('qrcode-container-invite');
-        qrContainer.innerHTML = "";
+        qrContainer.innerHTML = ""; // 清空上一次的
         new QRCode(qrContainer, {
             text: inviteUrlGlobal,
             width: 120,
@@ -307,7 +352,7 @@
         document.getElementById('invite-modal').classList.remove('hidden');
     }
 
-    // 手动触发复制（用户真实点击了按钮，成功率 100%）
+    // 手动复制链接（用户点击触发，成功率最高）
     function manualCopy() {
         const input = document.getElementById('invite-link-text');
         input.select();
@@ -325,12 +370,9 @@
         }
     }
 
-    // ================= 生成海报 =================
+    // 生成海报（兼容手机端加载慢的问题）
     function generatePoster() {
-        const canvas = document.getElementById('poster-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 临时生成用于海报的二维码
+        // 生成一个临时的隐藏容器装二维码
         const tempQrContainer = document.createElement('div');
         new QRCode(tempQrContainer, {
             text: inviteUrlGlobal,
@@ -341,89 +383,124 @@
             correctLevel : QRCode.CorrectLevel.H
         });
 
-        setTimeout(() => {
-            let gradient = ctx.createLinearGradient(0, 0, 600, 900);
-            gradient.addColorStop(0, "#1a0b2e");
-            gradient.addColorStop(0.5, "#0f0f1a");
-            gradient.addColorStop(1, "#2a0845");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 600, 900);
-
-            ctx.strokeStyle = "rgba(255, 105, 180, 0.3)";
-            ctx.lineWidth = 4;
-            ctx.strokeRect(20, 20, 560, 860);
-
-            ctx.fillStyle = "#aaa";
-            ctx.font = "24px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("次元觉醒 · ACGTI 人格测试", 300, 80);
-
-            let textGradient = ctx.createLinearGradient(150, 150, 450, 150);
-            textGradient.addColorStop(0, "#8a2be2");
-            textGradient.addColorStop(1, "#ff69b4");
-            ctx.fillStyle = textGradient;
-            ctx.font = "bold 100px sans-serif";
-            ctx.fillText(document.getElementById('result-code').innerText, 300, 220);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 36px sans-serif";
-            ctx.fillText(currentResultData.name, 300, 300);
-
-            ctx.fillStyle = "#cccccc";
-            ctx.font = "22px sans-serif";
-            ctx.textAlign = "left";
-            const desc = currentResultData.desc;
-            let line = '';
-            let y = 380;
-            const maxWidth = 480;
-            const x = 60;
-
-            for(let n = 0; n < desc.length; n++) {
-                let testLine = line + desc[n];
-                if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-                    ctx.fillText(line, x, y);
-                    line = desc[n];
-                    y += 40;
+        // 轮询检查二维码图片是否加载完毕
+        let checkCount = 0;
+        const checkQR = setInterval(() => {
+            const qrImg = tempQrContainer.querySelector('img') || tempQrContainer.querySelector('canvas');
+            
+            if (qrImg) {
+                clearInterval(checkQR); // 找到了停止轮询
+                if (qrImg.tagName.toLowerCase() === 'img') {
+                    if (qrImg.complete) {
+                        drawFullPoster(qrImg);
+                    } else {
+                        qrImg.onload = () => drawFullPoster(qrImg);
+                    }
                 } else {
-                    line = testLine;
+                    drawFullPoster(qrImg); // 如果是 canvas 直接画
                 }
             }
-            ctx.fillText(line, x, y);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(200, 650, 200, 200, 16);
-            } else {
-                ctx.rect(200, 650, 200, 200); // 兼容旧版
-            }
-            ctx.fill();
-
-            const qrImg = tempQrContainer.querySelector('img');
-            if (qrImg) {
-                const drawQR = () => {
-                    ctx.drawImage(qrImg, 220, 670, 160, 160); 
-                    finishPoster(canvas);
-                };
-                if (qrImg.complete) drawQR();
-                else qrImg.onload = drawQR;
-            } else {
-                finishPoster(canvas);
+            
+            checkCount++;
+            // 兜底：如果等了3秒还没出来，就画个没有二维码的图
+            if (checkCount > 30) {
+                clearInterval(checkQR);
+                drawFullPoster(null);
             }
         }, 100);
     }
 
-    function finishPoster(canvas) {
+    // 绘制完整海报
+    function drawFullPoster(qrImgElement) {
+        const canvas = document.getElementById('poster-canvas');
         const ctx = canvas.getContext('2d');
+
+        // 背景
+        let gradient = ctx.createLinearGradient(0, 0, 600, 900);
+        gradient.addColorStop(0, "#1a0b2e");
+        gradient.addColorStop(0.5, "#0f0f1a");
+        gradient.addColorStop(1, "#2a0845");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 600, 900);
+
+        // 边框
+        ctx.strokeStyle = "rgba(255, 105, 180, 0.3)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(20, 20, 560, 860);
+
+        // 标题
+        ctx.fillStyle = "#aaa";
+        ctx.font = "24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("次元觉醒 · ACGTI 人格测试", 300, 80);
+
+        // 人格代码
+        let textGradient = ctx.createLinearGradient(150, 150, 450, 150);
+        textGradient.addColorStop(0, "#8a2be2");
+        textGradient.addColorStop(1, "#ff69b4");
+        ctx.fillStyle = textGradient;
+        ctx.font = "bold 100px sans-serif";
+        ctx.fillText(document.getElementById('result-code').innerText, 300, 220);
+
+        // 名称
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 36px sans-serif";
+        ctx.fillText(currentResultData.name, 300, 300);
+
+        // 描述自动换行
+        ctx.fillStyle = "#cccccc";
+        ctx.font = "22px sans-serif";
+        ctx.textAlign = "left";
+        const desc = currentResultData.desc;
+        let line = '';
+        let y = 380;
+        const maxWidth = 480;
+        const x = 60;
+
+        for(let n = 0; n < desc.length; n++) {
+            let testLine = line + desc[n];
+            if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                ctx.fillText(line, x, y);
+                line = desc[n];
+                y += 40;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, x, y);
+
+        // 底部二维码白底
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(200, 650, 200, 200, 16);
+        } else {
+            ctx.rect(200, 650, 200, 200); 
+        }
+        ctx.fill();
+
+        // 绘制二维码
+        if (qrImgElement) {
+            ctx.drawImage(qrImgElement, 220, 670, 160, 160); 
+        } else {
+            ctx.fillStyle = "#ff69b4";
+            ctx.font = "16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("网络较慢，二维码生成失败", 300, 750);
+        }
+
+        // 底部提示文字
         ctx.fillStyle = "#ff69b4";
         ctx.font = "bold 20px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("长按保存海报，扫码或发给朋友测测Ta的人格", 300, 600);
 
+        // 导出图片并展示
         const imgData = canvas.toDataURL("image/png");
         document.getElementById('poster-img').src = imgData;
         document.getElementById('poster-modal').classList.remove('hidden');
     }
 </script>
+
 </body>
 </html>
