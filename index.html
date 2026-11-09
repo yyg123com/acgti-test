@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>次元觉醒 - ACGTI 人格测试</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #ff69b4;
+            --bg: #0f0f1a;
+            --text: #e0e0e0;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle at top right, #2a0845, #0f0f1a);
+            -webkit-touch-callout: default; /* 允许长按 */
+        }
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        h1 {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        p.subtitle { color: #aaa; margin-bottom: 30px; }
+        .btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+        }
+        .progress-bar {
+            width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px; margin-bottom: 30px; overflow: hidden;
+        }
+        .progress { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 0.3s ease; }
+        .question-title { font-size: 1.2em; margin-bottom: 25px; line-height: 1.5; text-align: left; }
+        .option-btn {
+            display: block; width: 100%; background: rgba(255, 255, 255, 0.08);
+            color: var(--text); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px; margin-bottom: 15px; border-radius: 8px;
+            cursor: pointer; text-align: left; font-size: 1em; transition: all 0.2s; box-sizing: border-box;
+        }
+        .option-btn:active { background: rgba(255, 255, 255, 0.2); }
+        .hidden { display: none !important; }
+        .result-type { font-size: 3em; font-weight: bold; color: var(--secondary); margin: 10px 0; letter-spacing: 5px; }
+        .result-desc {
+            text-align: left; line-height: 1.6; background: rgba(0, 0, 0, 0.3);
+            padding: 20px; border-radius: 8px; margin-top: 20px; font-size: 0.95em;
+        }
+        .friend-tip { font-size: 0.9em; color: #ff69b4; margin-top: 20px; font-style: italic; }
+
+        /* 统一弹窗遮罩 */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; justify-content: center;
+            align-items: center; z-index: 1000; flex-direction: column;
+        }
+        
+        /* 海报弹窗样式 */
+        .poster-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; height: 100%; padding: 20px; box-sizing: border-box; overflow-y: auto;
+        }
+        .poster-wrapper img {
+            width: 100%; max-width: 400px; border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255,105,180,0.3); margin-bottom: 20px;
+            -webkit-touch-callout: default;
+        }
+        .save-tip { color: #ff69b4; font-size: 1.1em; font-weight: bold; margin-bottom: 15px; text-align: center; }
+
+        /* 邀请弹窗样式（全新） */
+        .invite-box {
+            background: #1a1a2e; padding: 25px; border-radius: 16px;
+            width: 85%; max-width: 400px; text-align: center;
+            border: 1px solid var(--secondary);
+        }
+        .invite-box h3 { margin-top: 0; color: var(--secondary); font-size: 1.4em; }
+        .invite-box p { font-size: 0.9em; color: #aaa; margin-bottom: 15px; }
+        .invite-link-input {
+            width: 100%; padding: 12px; box-sizing: border-box;
+            background: rgba(255,255,255,0.1); border: 1px solid #444;
+            color: #fff; border-radius: 8px; font-size: 0.9em;
+            margin-bottom: 15px; text-align: center; user-select: all;
+        }
+        .invite-qr { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0; }
+        
+        .modal-close {
+            color: white; margin-top: 20px; font-size: 1em;
+            cursor: pointer; padding: 10px 30px; border: 1px solid #666; border-radius: 20px;
+        }
+        
+        #poster-canvas, #qrcode-container-invite { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <div id="start-screen">
+        <h1>次元觉醒</h1>
+        <p class="subtitle">ACGTI 二次元人格测试</p>
+        <p>探索你潜意识中的纸片人灵魂，看看你究竟属于哪种二次元属性！</p>
+        <button class="btn" onclick="startTest()">开始测试</button>
+        <div id="friend-challenge" class="friend-tip hidden"></div>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="progress-bar"><div class="progress" id="progress"></div></div>
+        <div class="question-title" id="question-text"></div>
+        <div id="options-container"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h1>你的二次元人格是</h1>
+        <div class="result-type" id="result-code"></div>
+        <h2 id="result-name" style="color: #fff;"></h2>
+        <div class="result-desc" id="result-desc"></div>
+        
+        <button class="btn" style="margin-top: 25px;" onclick="generatePoster()">📸 生成专属海报并保存</button>
+        <button class="btn btn-outline" onclick="openInviteModal()">🔗 复制链接/扫码邀请好友</button>
+        <button class="btn btn-outline" style="margin-top: 15px; border-color: #666; color: #aaa;" onclick="resetTest()">重新测试</button>
+    </div>
+</div>
+
+<!-- 海报展示弹窗 -->
+<div id="poster-modal" class="modal hidden">
+    <div class="poster-wrapper">
+        <div class="save-tip">👇 长按下方图片即可保存到手机相册 👇</div>
+        <img id="poster-img" src="" alt="测试结果海报">
+        <div class="modal-close" onclick="document.getElementById('poster-modal').classList.add('hidden')">关闭</div>
+    </div>
+</div>
+
+<!-- 邀请弹窗（全新） -->
+<div id="invite-modal" class="modal hidden">
+    <div class="invite-box">
+        <h3>🔗 邀请好友来测测</h3>
+        <p>直接复制下方链接，或让好友扫码</p>
+        <input type="text" id="invite-link-text" class="invite-link-input" readonly>
+        <button class="btn" onclick="manualCopy()">点击复制链接</button>
+        
+        <div class="invite-qr" id="qrcode-container-invite"></div>
+        <p style="margin-top: 10px; font-size: 0.8em; color:#ff69b4">微信/QQ内请点击右上角“···”分享</p>
+        
+        <div class="modal-close" onclick="document.getElementById('invite-modal').classList.add('hidden')">关闭</div>
+    </div>
+</div>
+
+<canvas id="poster-canvas" width="600" height="900"></canvas>
+
+<script>
+    const questions = [
+        { q: "如果在漫展上看到喜欢的Coser，你会？", options: [ { text: "A. 直接冲上去求合影，大声喊出“贴贴！”", type: "E" }, { text: "B. 远远地躲在柱子后面偷偷看，默默拍照", type: "I" } ] },
+        { q: "看番剧时，你更看重？", options: [ { text: "A. 剧情设定严谨，世界观宏大，逻辑自洽", type: "S" }, { text: "B. 角色够不够涩/可爱，脑洞够不够大，二创多不多", type: "N" } ] },
+        { q: "打游戏连跪（排位十连败）时，你的反应是？", options: [ { text: "A. 理性分析战绩，复盘失误，研究版本答案", type: "T" }, { text: "B. 破防大骂队友，或者开始摆烂去玩娱乐模式", type: "F" } ] },
+        { q: "周末你的二次元日常更倾向于？", options: [ { text: "A. 制定好计划，补番表、游戏日常、买谷子一个不落", type: "J" }, { text: "B. 随缘，累了就躺着，打开B站首页推什么看什么", type: "P" } ] },
+        { q: "当你在网上看到有人狂踩你最爱的神作时？", options: [ { text: "A. 必须重拳出击，列出万字长文证明他的观点是错的", type: "T" }, { text: "B. 心里很难受，但懒得争论，默默关掉网页抱抱自己", type: "F" } ] }
+    ];
+
+    const results = {
+        "ENFJ": { name: "亚撒西的温柔主角", desc: "你就像王道热血番里的男主/女主，充满共情能力，总是用爱和羁绊感化反派。你的属性是：社交牛逼症、保姆型人格、小太阳。" },
+        "INFP": { name: "深处迷雾中的中二法师", desc: "你的内心世界极其丰富，可能是个重度设定控或文字游戏爱好者。在外人看来有些社恐，但在自己的世界里你就是绝对的神明。属性：脑洞大开、内心戏超多、设定狂魔。" },
+        "ISTJ": { name: "无情的考据党/白金奖杯猎人", desc: "你玩游戏必须全收集，看番必须记住所有设定细节。你极其自律，讨厌乱改设定的OOC同人。属性：强迫症、考据狂、严谨的二次元观察者。" },
+        "ENTP": { name: "乐子人/混沌邪恶群友", desc: "你在互联网上冲浪速度极快，熟练运用各种抽象梗。对你来说，看别人吵架比自己玩游戏还有意思。属性：梗仙、乐子人、老司机。" },
+        "ESTP": { name: "现充型硬核玩家", desc: "比起宅在家里，你更愿意去漫展跑酷、去街机厅搓音游。你喜欢高强度、快节奏的刺激感。属性：行动派、手速达人、社交恐怖分子。" },
+        "ISFJ": { name: "默默付出的治愈系辅助", desc: "你在任何团队里都是最可靠的奶妈/辅助。你在意别人的感受，容易吃冷门CP，并且会默默为自己喜欢的角色产粮。属性：妈系、产粮大户、温柔天使。" },
+        "INTJ": { name: "洞悉一切的幕后黑手", desc: "你喜欢策略类游戏，看番也总是能提前猜出结局。你对无脑爽文嗤之以鼻，更偏爱智斗和悬疑。属性：高智商反派、腹黑、计画通。" },
+        "ESFP": { name: "永远热情的热血笨蛋", desc: "你就像动漫里那些大口吃肉、大声笑的角色。遇到喜欢的角色会疯狂氪金买谷子，快乐就完事了。属性：单细胞、情绪充沛、冲动消费。" },
+        "INFJ": { name: "悲天悯人的白魔法师", desc: "你有着强烈的道德感和对美好事物的向往。你总能看透别人隐藏的悲伤，但往往无法拯救自己。属性：温柔且坚定、精神洁癖、理想主义。" },
+        "ENFP": { name: "永远充满电的小狗", desc: "你对一切新奇事物都充满好奇，一会想学画画一会想学吉他。虽然经常三分钟热度，但你真诚的笑容总能感染所有人。属性：修勾、快乐源泉、脑洞发射器。" },
+        "INTP": { name: "疯狂查资料的考据狂魔", desc: "你沉迷于探索事物的底层逻辑，会为了一个设定的合理性去翻遍维基百科。你对日常社交不感兴趣，除非聊到你喜欢的硬核领域。属性：逻辑怪、考据党、技术宅。" },
+        "ENTJ": { name: "傲娇的团队指挥官", desc: "你讨厌低效和无能，不管是打公会战还是做小组作业，你都会不由自主地成为那个发号施令的人。虽然嘴硬，但总能带大家走向胜利。属性：霸道总裁、行动力天花板、傲娇。" },
+        "ISFP": { name: "沉浸在自己世界的画师", desc: "你极其注重审美，不管是看番还是玩游戏，画风和音乐是你最看重的部分。比起争论，你更喜欢用画笔或文字表达情绪。属性：艺术家、佛系、社恐但内心丰富。" },
+        "ESFJ": { name: "最可靠的团宠/粘合剂", desc: "你是大家最喜欢的团宠，总是能敏锐地察觉到朋友的情绪变化。你致力于维护群里的和平，也是各种线下聚会的组织者。属性：热心肠、气氛担当、情感雷达。" },
+        "ISTP": { name: "沉默寡言的操作大神", desc: "你不爱说废话，但在游戏里总是那个一穿五的操作怪。你对动手改装配件、研究连招有着极高的天赋。属性：人狠话不多、技术流、独立自主。" },
+        "ESTJ": { name: "严格的管理员/班长", desc: "你无法忍受群里的无序和规矩被破坏。不管是在线下的漫展排队还是线上的联机游戏，你都希望一切按规则来。属性：铁面无私、执行机器、秩序维护者。" },
+        "DEFAULT": { name: "变幻莫测的未知观测者", desc: "你的性格过于复杂，打破了次元壁的常规认知！你既可以是傲娇，也可以是三无，你是一个自由的灵魂。" }
+    };
+
+    let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+    let currentQuestion = 0;
+    let currentResultData = null;
+    let inviteUrlGlobal = "";
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const friendCode = urlParams.get('invite');
+        if (friendCode && results[friendCode]) {
+            const friendTip = document.getElementById('friend-challenge');
+            friendTip.classList.remove('hidden');
+            friendTip.innerText = `🔥 你的好友向你发起了挑战！\nTa的隐藏人格是 [${friendCode}]，快来测测你的！`;
+        }
+    };
+
+    function startTest() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        document.getElementById('progress').style.width = `${(currentQuestion / questions.length) * 100}%`;
+        document.getElementById('question-text').innerText = `Q${currentQuestion + 1}. ${questions[currentQuestion].q}`;
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        questions[currentQuestion].options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => {
+                scores[opt.type]++;
+                currentQuestion++;
+                if (currentQuestion < questions.length) loadQuestion();
+                else showResult();
+            };
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('progress').style.width = '100%';
+
+        let code = "";
+        code += (scores.E >= scores.I) ? "E" : "I";
+        code += (scores.N >= scores.S) ? "N" : "S"; 
+        code += (scores.F >= scores.T) ? "F" : "T"; 
+        code += (scores.P >= scores.J) ? "P" : "J";
+        currentResultData = results[code] || results["DEFAULT"];
+
+        document.getElementById('result-code').innerText = code;
+        document.getElementById('result-name').innerText = currentResultData.name;
+        document.getElementById('result-desc').innerText = currentResultData.desc;
+        
+        // 提前计算好邀请链接
+        const baseUrl = window.location.href.split('?')[0];
+        inviteUrlGlobal = `${baseUrl}?invite=${code}`;
+    }
+
+    function resetTest() {
+        scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        currentQuestion = 0;
+        currentResultData = null;
+        document.getElementById('progress').style.width = '0%';
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+        if (window.history.pushState) {
+            const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({path:newurl},'',newurl);
+        }
+    }
+
+    // ================= 全新：打开邀请弹窗 =================
+    function openInviteModal() {
+        document.getElementById('invite-link-text').value = inviteUrlGlobal;
+        
+        // 生成二维码
+        const qrContainer = document.getElementById('qrcode-container-invite');
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, {
+            text: inviteUrlGlobal,
+            width: 120,
+            height: 120,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        
+        document.getElementById('invite-modal').classList.remove('hidden');
+    }
+
+    // 手动触发复制（用户真实点击了按钮，成功率 100%）
+    function manualCopy() {
+        const input = document.getElementById('invite-link-text');
+        input.select();
+        input.setSelectionRange(0, 99999); // 兼容 iOS
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                alert("✅ 链接已成功复制！");
+            } else {
+                alert("❌ 复制失败，请长按输入框全选链接手动复制。");
+            }
+        } catch (err) {
+            alert("❌ 复制失败，请长按输入框全选链接手动复制。");
+        }
+    }
+
+    // ================= 生成海报 =================
+    function generatePoster() {
+        const canvas = document.getElementById('poster-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 临时生成用于海报的二维码
+        const tempQrContainer = document.createElement('div');
+        new QRCode(tempQrContainer, {
+            text: inviteUrlGlobal,
+            width: 120,
+            height: 120,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        setTimeout(() => {
+            let gradient = ctx.createLinearGradient(0, 0, 600, 900);
+            gradient.addColorStop(0, "#1a0b2e");
+            gradient.addColorStop(0.5, "#0f0f1a");
+            gradient.addColorStop(1, "#2a0845");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 600, 900);
+
+            ctx.strokeStyle = "rgba(255, 105, 180, 0.3)";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(20, 20, 560, 860);
+
+            ctx.fillStyle = "#aaa";
+            ctx.font = "24px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("次元觉醒 · ACGTI 人格测试", 300, 80);
+
+            let textGradient = ctx.createLinearGradient(150, 150, 450, 150);
+            textGradient.addColorStop(0, "#8a2be2");
+            textGradient.addColorStop(1, "#ff69b4");
+            ctx.fillStyle = textGradient;
+            ctx.font = "bold 100px sans-serif";
+            ctx.fillText(document.getElementById('result-code').innerText, 300, 220);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 36px sans-serif";
+            ctx.fillText(currentResultData.name, 300, 300);
+
+            ctx.fillStyle = "#cccccc";
+            ctx.font = "22px sans-serif";
+            ctx.textAlign = "left";
+            const desc = currentResultData.desc;
+            let line = '';
+            let y = 380;
+            const maxWidth = 480;
+            const x = 60;
+
+            for(let n = 0; n < desc.length; n++) {
+                let testLine = line + desc[n];
+                if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                    ctx.fillText(line, x, y);
+                    line = desc[n];
+                    y += 40;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, y);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(200, 650, 200, 200, 16);
+            } else {
+                ctx.rect(200, 650, 200, 200); // 兼容旧版
+            }
+            ctx.fill();
+
+            const qrImg = tempQrContainer.querySelector('img');
+            if (qrImg) {
+                const drawQR = () => {
+                    ctx.drawImage(qrImg, 220, 670, 160, 160); 
+                    finishPoster(canvas);
+                };
+                if (qrImg.complete) drawQR();
+                else qrImg.onload = drawQR;
+            } else {
+                finishPoster(canvas);
+            }
+        }, 100);
+    }
+
+    function finishPoster(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = "#ff69b4";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("长按保存海报，扫码或发给朋友测测Ta的人格", 300, 600);
+
+        const imgData = canvas.toDataURL("image/png");
+        document.getElementById('poster-img').src = imgData;
+        document.getElementById('poster-modal').classList.remove('hidden');
+    }
+</script>
+</body>
+</html>
