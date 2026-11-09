@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>次元觉醒 - ACGTI 人格测试</title>
-    <!-- 引入二维码生成库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #8a2be2;
@@ -121,14 +119,13 @@
             color: #fff; border-radius: 8px; font-size: 0.9em;
             margin-bottom: 15px; text-align: center; user-select: all;
         }
-        .invite-qr { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0; min-height: 120px; min-width: 120px; }
         
         .modal-close {
             color: white; margin-top: 20px; font-size: 1em;
             cursor: pointer; padding: 10px 30px; border: 1px solid #666; border-radius: 20px;
         }
         
-        #poster-canvas, #qrcode-container-invite { display: none; }
+        #poster-canvas { display: none; }
     </style>
 </head>
 <body>
@@ -158,7 +155,7 @@
         <div class="result-desc" id="result-desc"></div>
         
         <button class="btn" style="margin-top: 25px;" onclick="generatePoster()">📸 生成专属海报并保存</button>
-        <button class="btn btn-outline" onclick="openInviteModal()">🔗 复制链接/扫码邀请好友</button>
+        <button class="btn btn-outline" onclick="openInviteModal()">🔗 复制链接邀请好友</button>
         <button class="btn btn-outline" style="margin-top: 15px; border-color: #666; color: #aaa;" onclick="resetTest()">重新测试</button>
     </div>
 </div>
@@ -176,12 +173,10 @@
 <div id="invite-modal" class="modal hidden">
     <div class="invite-box">
         <h3>🔗 邀请好友来测测</h3>
-        <p>直接复制下方链接，或让好友扫码</p>
+        <p>直接复制下方链接发给朋友</p>
         <input type="text" id="invite-link-text" class="invite-link-input" readonly>
         <button class="btn" onclick="manualCopy()">点击复制链接</button>
-        
-        <div class="invite-qr" id="qrcode-container-invite"></div>
-        <p style="margin-top: 10px; font-size: 0.8em; color:#ff69b4">微信/QQ内请点击右上角“···”分享</p>
+        <p style="margin-top: 15px; font-size: 0.8em; color:#ff69b4">如果是在微信内，可以点击右上角“···”直接分享本页</p>
         
         <div class="modal-close" onclick="document.getElementById('invite-modal').classList.add('hidden')">关闭</div>
     </div>
@@ -326,7 +321,7 @@
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('start-screen').classList.remove('hidden');
         
-        // 清除URL上的邀请参数，避免刷新干扰
+        // 清除URL上的邀请参数
         if (window.history.pushState) {
             const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.pushState({path:newurl},'',newurl);
@@ -336,19 +331,6 @@
     // 打开邀请弹窗
     function openInviteModal() {
         document.getElementById('invite-link-text').value = inviteUrlGlobal;
-        
-        // 生成二维码
-        const qrContainer = document.getElementById('qrcode-container-invite');
-        qrContainer.innerHTML = ""; // 清空上一次的
-        new QRCode(qrContainer, {
-            text: inviteUrlGlobal,
-            width: 120,
-            height: 120,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-        
         document.getElementById('invite-modal').classList.remove('hidden');
     }
 
@@ -361,7 +343,7 @@
         try {
             const successful = document.execCommand('copy');
             if (successful) {
-                alert("✅ 链接已成功复制！");
+                alert("✅ 链接已成功复制！快去发给朋友吧~");
             } else {
                 alert("❌ 复制失败，请长按输入框全选链接手动复制。");
             }
@@ -370,48 +352,8 @@
         }
     }
 
-    // 生成海报（兼容手机端加载慢的问题）
+    // 生成海报（完全剔除二维码，纯靠 UI 和文字提示）
     function generatePoster() {
-        // 生成一个临时的隐藏容器装二维码
-        const tempQrContainer = document.createElement('div');
-        new QRCode(tempQrContainer, {
-            text: inviteUrlGlobal,
-            width: 120,
-            height: 120,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-
-        // 轮询检查二维码图片是否加载完毕
-        let checkCount = 0;
-        const checkQR = setInterval(() => {
-            const qrImg = tempQrContainer.querySelector('img') || tempQrContainer.querySelector('canvas');
-            
-            if (qrImg) {
-                clearInterval(checkQR); // 找到了停止轮询
-                if (qrImg.tagName.toLowerCase() === 'img') {
-                    if (qrImg.complete) {
-                        drawFullPoster(qrImg);
-                    } else {
-                        qrImg.onload = () => drawFullPoster(qrImg);
-                    }
-                } else {
-                    drawFullPoster(qrImg); // 如果是 canvas 直接画
-                }
-            }
-            
-            checkCount++;
-            // 兜底：如果等了3秒还没出来，就画个没有二维码的图
-            if (checkCount > 30) {
-                clearInterval(checkQR);
-                drawFullPoster(null);
-            }
-        }, 100);
-    }
-
-    // 绘制完整海报
-    function drawFullPoster(qrImgElement) {
         const canvas = document.getElementById('poster-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -469,31 +411,15 @@
         }
         ctx.fillText(line, x, y);
 
-        // 底部二维码白底
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(200, 650, 200, 200, 16);
-        } else {
-            ctx.rect(200, 650, 200, 200); 
-        }
-        ctx.fill();
-
-        // 绘制二维码
-        if (qrImgElement) {
-            ctx.drawImage(qrImgElement, 220, 670, 160, 160); 
-        } else {
-            ctx.fillStyle = "#ff69b4";
-            ctx.font = "16px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("网络较慢，二维码生成失败", 300, 750);
-        }
-
-        // 底部提示文字
-        ctx.fillStyle = "#ff69b4";
-        ctx.font = "bold 20px sans-serif";
+        // 底部提示文字（居中靠下）
         ctx.textAlign = "center";
-        ctx.fillText("长按保存海报，扫码或发给朋友测测Ta的人格", 300, 600);
+        ctx.fillStyle = "#ff69b4";
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillText("👉 邀请好友来测测Ta的隐藏人格 👈", 300, 700);
+        
+        ctx.fillStyle = "#888";
+        ctx.font = "16px sans-serif";
+        ctx.fillText("（返回网页点击『复制链接邀请好友』即可发送）", 300, 760);
 
         // 导出图片并展示
         const imgData = canvas.toDataURL("image/png");
